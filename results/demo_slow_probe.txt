@@ -1,0 +1,8 @@
+Scenario S3, seed 1, proposed parameters: {'alpha': 0.3, 'probe_interval': 10, 'hysteresis': 0.1, 'confirm': 2}
+Metric                    Baseline    Proposed   Improvement
+Mean delay (ms)              26.61       29.90        -12.4%
+95th pct delay (ms)          79.24       78.28          1.2%
+Jitter (ms)                  12.87       13.15         -2.2%
+Packet loss (%)               3.10        2.42         22.0%
+Path switches                    0           7
+Probe packets sent               0         360

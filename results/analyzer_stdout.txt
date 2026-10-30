@@ -1,0 +1,36 @@
+[S3, seed 3, t = 120 s] Baseline path P1
+Path: S -> R1 -> R2 -> D
+Hop Link      Util    Prop     Tx   Queue   Total  Loss%     Cum
+1   S-R1      0.53    2.00   0.40    0.45    2.95   0.00    2.95
+2   R1-R2     1.00    6.00   0.80   26.04   32.94   1.69   35.88
+3   R2-D      0.50    2.00   0.40    0.41    2.91   0.00   38.79
+End-to-end mean delay = 38.79 ms (all times in ms)
+Bottleneck hop: R1-R2 (queueing 26.04 ms = 67% of path delay)
+
+[S3, seed 3, t = 120 s] Alternative path P2
+Path: S -> R3 -> R4 -> D
+Hop Link      Util    Prop     Tx   Queue   Total  Loss%     Cum
+1   S-R3      0.55    2.00   0.40    0.48    2.98   0.00    2.98
+2   R3-R4     1.13    8.00   1.00   55.34   64.44  11.51   67.42
+3   R4-D      0.63    2.00   0.40    0.68    3.18   0.00   70.60
+End-to-end mean delay = 70.60 ms (all times in ms)
+Bottleneck hop: R3-R4 (queueing 55.34 ms = 78% of path delay)
+
+[S4, seed 3, t = 150 s] Baseline path P1
+Path: S -> R1 -> R2 -> D
+Hop Link      Util    Prop     Tx   Queue   Total  Loss%     Cum
+1   S-R1      0.30    2.00   0.40    0.17    2.67   0.00    2.67
+2   R1-R2     1.73    6.00   2.00  123.27  131.37  42.30  134.05
+3   R2-D      0.39    2.00   0.40    0.25    2.75   0.00  136.80
+End-to-end mean delay = 136.80 ms (all times in ms)
+Bottleneck hop: R1-R2 (queueing 123.27 ms = 90% of path delay)
+
+[S4, seed 3, t = 150 s] Alternative path P2
+Path: S -> R3 -> R4 -> D
+Hop Link      Util    Prop     Tx   Queue   Total  Loss%     Cum
+1   S-R3      0.34    2.00   0.40    0.21    2.71   0.00    2.71
+2   R3-R4     0.54    8.00   1.00    1.18   10.28   0.00   12.99
+3   R4-D      0.38    2.00   0.40    0.24    2.74   0.00   15.73
+End-to-end mean delay = 15.73 ms (all times in ms)
+Bottleneck hop: R3-R4 (queueing 1.18 ms = 8% of path delay)
+

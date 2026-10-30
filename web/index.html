@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Path and Delay Analyzer - Interactive Test & Simulation Dashboard</title>
+  <meta name="description" content="Interactive test runner, simulation lab, and hop-by-hop delay decomposition dashboard for BCSE308P Computer Networks Lab project.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-brand">
+        <h1>Network Path and Delay Analyzer</h1>
+        <div class="header-tagline">
+          <span>BCSE308P Computer Networks Lab</span>
+          <span>•</span>
+          <div class="team-badge">
+            <span>Abhik Boxi (24BCE0741)</span>
+            <span>&</span>
+            <span>Siddharth Saini (24BKT0121)</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="status-indicator" id="server-status">
+          <span class="pulse-dot"></span>
+          <span id="status-text">System Live</span>
+        </div>
+        <button class="btn-primary" id="btn-run-tests" onclick="triggerRunTests()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Re-Run Tests
+        </button>
+      </div>
+    </header>
+
+    <!-- Top Statistical Summary Cards -->
+    <section class="stats-banner" aria-label="Project Test Statistics">
+      <div class="stat-card pass">
+        <div class="stat-label">Total Test Suite</div>
+        <div class="stat-value" id="stat-total-tests">6 / 6 Passed</div>
+        <div class="stat-sub">100% Success Rate (0 Failures)</div>
+      </div>
+      <div class="stat-card time">
+        <div class="stat-label">Execution Speed</div>
+        <div class="stat-value" id="stat-duration">0.09 s</div>
+        <div class="stat-sub">High-Performance Vectorized Math</div>
+      </div>
+      <div class="stat-card asserts">
+        <div class="stat-label">Total Assertions</div>
+        <div class="stat-value" id="stat-assertions">48 Verified</div>
+        <div class="stat-sub">Topology, M/M/1/K, DAPS, Simulation</div>
+      </div>
+      <div class="stat-card scenarios">
+        <div class="stat-label">Evaluation Scenarios</div>
+        <div class="stat-value">4 Scenarios</div>
+        <div class="stat-sub">30 Paired Runs per Scenario</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav" aria-label="Dashboard Navigation">
+      <button class="tab-btn active" onclick="switchTab('tab-prototype', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="10 8 16 12 10 16 10 8"></polygon>
+        </svg>
+        🕹️ Live Working Prototype
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-tests', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Test Suite & Verification
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-simulation', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        Live Simulation Lab
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-analyzer', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Hop-by-Hop Delay Analyzer
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-topology', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+        Topology Visualizer
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-benchmarks', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Benchmark Data & Charts
+      </button>
+    </nav>
+
+    <!-- TAB 0: Live Working Prototype -->
+    <div id="tab-prototype" class="tab-content active">
+      <div class="prototype-container">
+        <!-- Prototype Top Control Bar -->
+        <div class="prototype-topbar">
+          <div>
+            <span style="font-size: 0.82rem; color: var(--text-muted); display: block; margin-bottom: 0.35rem; font-weight: 700; letter-spacing: 0.05em;">ROUTING ENGINE MODE:</span>
+            <div class="mode-toggle-group">
+              <button class="mode-btn" id="btn-mode-baseline" onclick="setPrototypeMode('baseline')">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #ea580c;"></span>
+                Static OSPF (Dijkstra)
+              </button>
+              <button class="mode-btn active proposed" id="btn-mode-proposed" onclick="setPrototypeMode('proposed')">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></span>
+                DAPS (Adaptive Path Selection)
+              </button>
+            </div>
+          </div>
+
+          <div class="prototype-actions">
+            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">INJECT EVENTS:</span>
+            <button class="btn-trigger-burst" onclick="injectBurst('R1-R2')">
+              ⚡ Spike Burst on R1-R2
+            </button>
+            <button class="btn-trigger-degrade" onclick="triggerDegrade('R1-R2')">
+              ⚠️ Degrade R1-R2 (60% drop)
+            </button>
+            <button class="btn-clear-traffic" onclick="clearTrafficEvents()">
+              🔄 Normal Load
+            </button>
+            <button class="btn-secondary" style="padding: 0.5rem 0.9rem;" id="btn-play-pause" onclick="toggleSimPause()">
+              ⏸ Pause
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Interactive Grid: Canvas + Telemetry -->
+        <div class="prototype-main-grid">
+          <!-- Canvas Visualizer Card -->
+          <div class="canvas-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 0.9rem; font-weight: 700; color: #fff;">LIVE PACKET TRANSMISSION CANVAS</span>
+                <span id="canvas-status-tag" style="font-size: 0.75rem; background: rgba(6,182,212,0.15); color: var(--cyan); border: 1px solid rgba(6,182,212,0.3); padding: 0.2rem 0.6rem; border-radius: 9999px;">
+                  Active Path: P1 (S-R1-R2-D)
+                </span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">
+                Animation: 60 FPS | Packets: Real-time
+              </span>
+            </div>
+
+            <canvas id="network-canvas" width="860" height="440"></canvas>
+          </div>
+
+          <!-- Telemetry & Live Stats Sidebar -->
+          <div class="telemetry-sidebar">
+            <div class="telemetry-card">
+              <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Live End-to-End Latency</span>
+              <div class="live-latency-gauge" id="gauge-latency">18.4 ms</div>
+              <div style="font-size: 0.8rem; color: var(--teal);" id="gauge-sub">Flow delivers smoothly</div>
+
+              <div class="telemetry-metric" style="margin-top: 0.75rem;">
+                <span class="telemetry-metric-title">Active Path</span>
+                <span class="telemetry-metric-val" id="tele-path" style="color: var(--cyan);">P1 (S-R1-R2-D)</span>
+              </div>
+              <div class="telemetry-metric">
+                <span class="telemetry-metric-title">Bottleneck Hop</span>
+                <span class="telemetry-metric-val" id="tele-bottleneck" style="color: #fb923c;">None</span>
+              </div>
+              <div class="telemetry-metric">
+                <span class="telemetry-metric-title">Hold-down State</span>
+                <span class="telemetry-metric-val" id="tele-holddown" style="color: var(--text-main);">Locked (2/2)</span>
+              </div>
+              <div class="telemetry-metric">
+                <span class="telemetry-metric-title">Packets Delivered</span>
+                <span class="telemetry-metric-val" id="tele-delivered" style="color: #34d399;">0</span>
+              </div>
+              <div class="telemetry-metric">
+                <span class="telemetry-metric-title">Packets Dropped</span>
+                <span class="telemetry-metric-val" id="tele-dropped" style="color: #f87171;">0</span>
+              </div>
+              <div class="telemetry-metric">
+                <span class="telemetry-metric-title">Path Switches</span>
+                <span class="telemetry-metric-val" id="tele-switches" style="color: var(--indigo);">0</span>
+              </div>
+            </div>
+
+            <!-- Real-time Latency Chart Card -->
+            <div class="realtime-chart-card">
+              <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">
+                Real-Time Latency History (Last 60s)
+              </span>
+              <canvas id="chart-canvas" width="300" height="120"></canvas>
+            </div>
+
+            <!-- Event Ticker -->
+            <div class="prototype-ticker" id="event-ticker">
+              <!-- Live events injected via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: Test Suite Verification -->
+    <div id="tab-tests" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div>
+          <h2 style="font-size: 1.4rem;">Automated Test Verification Matrix</h2>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">
+            Comprehensive unit and integration test suite executing mathematical models, routing logic, and delay decompositions.
+          </p>
+        </div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--cyan);" id="test-timestamp">
+          Last Executed: Today
+        </span>
+      </div>
+
+      <div class="tests-grid" id="tests-list-container">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Raw Unittest Terminal Stream -->
+      <div style="margin-top: 2rem;">
+        <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+          Raw Unittest Console Output
+        </h3>
+        <pre class="terminal-box" id="test-raw-log">Loading test stream...</pre>
+      </div>
+    </div>
+
+    <!-- TAB 2: Live Simulation Lab -->
+    <div id="tab-simulation" class="tab-content">
+      <div class="sim-grid">
+        <div class="control-panel">
+          <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Simulation Controller</h3>
+          
+          <div class="control-group">
+            <label class="control-label" for="sim-scenario">
+              <span>Traffic Scenario</span>
+              <span id="scenario-hint" style="color: var(--cyan); font-weight: normal;">High Load</span>
+            </label>
+            <select id="sim-scenario" onchange="updateScenarioDesc()">
+              <option value="S1">S1 — Low Load (0.5x)</option>
+              <option value="S2">S2 — Medium Load (1.0x)</option>
+              <option value="S3" selected>S3 — High Load (1.5x, Heavy Bursts)</option>
+              <option value="S4">S4 — Link Degradation (R1-R2 40% cap)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="sim-seed">
+              <span>Random Seed (Reproducibility)</span>
+              <span id="seed-val">1</span>
+            </label>
+            <input type="number" id="sim-seed" class="control-input" value="1" min="1" max="100">
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="sim-interval">
+              <span>Probe Interval (seconds)</span>
+              <span id="interval-val" style="color: var(--teal);">2 s</span>
+            </label>
+            <input type="range" id="sim-interval" min="1" max="20" value="2" oninput="document.getElementById('interval-val').innerText = this.value + ' s'">
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="sim-hysteresis">
+              <span>Hysteresis Margin (h)</span>
+              <span id="hysteresis-val" style="color: var(--orange);">10% (0.10)</span>
+            </label>
+            <input type="range" id="sim-hysteresis" min="0" max="30" value="10" oninput="document.getElementById('hysteresis-val').innerText = this.value + '% (0.' + (this.value < 10 ? '0' : '') + this.value + ')'">
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="sim-flow-rate">
+              <span>Foreground Flow Rate</span>
+              <span id="flow-val">2.0 Mbps</span>
+            </label>
+            <select id="sim-flow-rate">
+              <option value="0.5">0.5 Mbps (Light)</option>
+              <option value="2.0" selected>2.0 Mbps (Default Flow)</option>
+              <option value="4.0">4.0 Mbps (Self-Induced Congestion Risk)</option>
+              <option value="6.0">6.0 Mbps (Heavy - Failure Mode)</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" style="width: 100%; justify-content: center; margin-top: 0.5rem;" onclick="runSimulationDemo()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Execute Comparative Run
+          </button>
+        </div>
+
+        <div class="sim-results">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <h3 style="font-size: 1.25rem;">Live Performance Comparison</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);" id="sim-time-tag">300s Simulated Run</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Baseline OSPF Static Path (Orange) vs Delay-Aware Adaptive Path Selection (Blue)
+          </p>
+
+          <div class="metrics-comparison" id="metrics-cards-container">
+            <!-- Populated via JavaScript -->
+          </div>
+
+          <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+              <span><strong>Path Switches Triggered:</strong> <span id="res-switches" style="color: var(--cyan); font-weight: bold;">21</span></span>
+              <span><strong>Active Probes Sent:</strong> <span id="res-probes" style="color: var(--teal); font-weight: bold;">1,800 packets (0.15% overhead)</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Hop-by-Hop Delay Analyzer -->
+    <div id="tab-analyzer" class="tab-content">
+      <div class="control-panel" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <label class="control-label" for="analyzer-scenario">Snapshot Scenario</label>
+            <select id="analyzer-scenario">
+              <option value="S4" selected>S4 — Link Degradation (R1-R2 at 40% cap)</option>
+              <option value="S3">S3 — High Load Peak</option>
+              <option value="S2">S2 — Medium Load</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 150px;">
+            <label class="control-label" for="analyzer-time">Snapshot Second (t)</label>
+            <input type="number" id="analyzer-time" class="control-input" value="150" min="1" max="300">
+          </div>
+          <div>
+            <button class="btn-primary" onclick="runAnalyzerReport()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              Analyze Candidate Paths
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="analyzer-results-container">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- TAB 4: Network Topology Visualizer -->
+    <div id="tab-topology" class="tab-content">
+      <div class="topo-container">
+        <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">7-Node Test Network Topology & Paths</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Select a candidate path to highlight the route and inspect link bandwidth & physical propagation delays.
+        </p>
+
+        <div class="path-selector-bar">
+          <button class="path-btn active" id="btn-path-p1" onclick="highlightPath('P1')">
+            P1: S -> R1 -> R2 -> D (Baseline OSPF Choice, Cost = 20.0)
+          </button>
+          <button class="path-btn" id="btn-path-p2" onclick="highlightPath('P2')">
+            P2: S -> R3 -> R4 -> D (Alternative 1, Cost = 22.5)
+          </button>
+          <button class="path-btn" id="btn-path-p3" onclick="highlightPath('P3')">
+            P3: S -> R1 -> R5 -> R4 -> D (Alternative 2, Cost = 30.0)
+          </button>
+        </div>
+
+        <!-- SVG Topology Diagram -->
+        <svg id="network-svg" viewBox="0 0 850 420" style="width: 100%; max-width: 850px; background: #080c16; border-radius: 12px; border: 1px solid var(--border-subtle);">
+          <!-- Definitions for glowing effects -->
+          <defs>
+            <linearGradient id="grad-path" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#06b6d4" />
+              <stop offset="100%" stop-color="#10b981" />
+            </linearGradient>
+            <filter id="glow-p1" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          <!-- Links Background Lines -->
+          <g id="svg-all-links" stroke="#1e293b" stroke-width="4">
+            <line id="link-S-R1" x1="80" y1="210" x2="230" y2="110" />
+            <line id="link-S-R3" x1="80" y1="210" x2="230" y2="310" />
+            <line id="link-R1-R2" x1="230" y1="110" x2="620" y2="110" />
+            <line id="link-R2-D" x1="620" y1="110" x2="770" y2="210" />
+            <line id="link-R3-R4" x1="230" y1="310" x2="620" y2="310" />
+            <line id="link-R4-D" x1="620" y1="310" x2="770" y2="210" />
+            <line id="link-R1-R5" x1="230" y1="110" x2="425" y2="210" />
+            <line id="link-R5-R4" x1="425" y1="210" x2="620" y2="310" />
+          </g>
+
+          <!-- Dynamic Active Highlight Lines -->
+          <g id="svg-active-path" stroke="var(--cyan)" stroke-width="5" stroke-linecap="round" filter="url(#glow-p1)">
+            <!-- Injected dynamically -->
+          </g>
+
+          <!-- Link Text Labels -->
+          <g font-size="10" fill="#94a3b8" font-family="'JetBrains Mono', monospace" text-anchor="middle">
+            <text x="145" y="150">20M, 2ms</text>
+            <text x="145" y="275">20M, 2ms</text>
+            <text x="425" y="95" fill="#f97316">10M, 6ms (Bottleneck link)</text>
+            <text x="705" y="150">20M, 2ms</text>
+            <text x="425" y="330">8M, 8ms</text>
+            <text x="705" y="275">20M, 2ms</text>
+            <text x="310" y="180">10M, 5ms</text>
+            <text x="540" y="245">10M, 5ms</text>
+          </g>
+
+          <!-- Nodes -->
+          <g font-family="'Outfit', sans-serif" font-weight="700" text-anchor="middle">
+            <!-- S (Source) -->
+            <rect x="50" y="185" width="60" height="50" rx="8" fill="#1e3a5f" stroke="#38bdf8" stroke-width="2"/>
+            <text x="80" y="215" fill="#fff" font-size="16">S</text>
+            <text x="80" y="250" fill="#38bdf8" font-size="11">Source</text>
+
+            <!-- R1 -->
+            <circle cx="230" cy="110" r="25" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+            <text x="230" y="115" fill="#fff" font-size="13">R1</text>
+
+            <!-- R3 -->
+            <circle cx="230" cy="310" r="25" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+            <text x="230" y="315" fill="#fff" font-size="13">R3</text>
+
+            <!-- R5 -->
+            <circle cx="425" cy="210" r="25" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+            <text x="425" y="215" fill="#fff" font-size="13">R5</text>
+
+            <!-- R2 -->
+            <circle cx="620" cy="110" r="25" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+            <text x="620" y="115" fill="#fff" font-size="13">R2</text>
+
+            <!-- R4 -->
+            <circle cx="620" cy="310" r="25" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+            <text x="620" y="315" fill="#fff" font-size="13">R4</text>
+
+            <!-- D (Destination) -->
+            <rect x="740" y="185" width="60" height="50" rx="8" fill="#1e3a5f" stroke="#10b981" stroke-width="2"/>
+            <text x="770" y="215" fill="#fff" font-size="16">D</text>
+            <text x="770" y="250" fill="#34d399" font-size="11">Dest</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- TAB 5: Benchmark Data & Charts -->
+    <div id="tab-benchmarks" class="tab-content">
+      <div style="margin-bottom: 2rem;">
+        <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Official 30-Run Experimental Benchmark Results</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">
+          Data extracted from repeated runs with paired seeds (mean ± SD) with Student's t-test statistical validation.
+        </p>
+
+        <div class="data-table-wrap">
+          <table id="benchmark-table">
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>Metric Evaluated</th>
+                <th>Baseline (OSPF)</th>
+                <th>DAPS (Proposed)</th>
+                <th>Improvement (%)</th>
+                <th>Statistical p-Value</th>
+              </tr>
+            </thead>
+            <tbody id="benchmark-tbody">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Publication Figures Gallery -->
+      <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Generated Figures & Artifacts</h3>
+      <div class="gallery-grid">
+        <div class="gallery-card">
+          <img src="figures/fig_results.png" alt="Baseline vs Proposed Bar Chart" loading="lazy">
+          <h4>Performance Overview Across Scenarios</h4>
+          <p>Bar charts displaying delay, jitter, and loss reductions across S1, S2, S3, and S4.</p>
+        </div>
+        <div class="gallery-card">
+          <img src="figures/fig_timeseries.png" alt="Dynamic Latency Time Series" loading="lazy">
+          <h4>Time-Series Dynamic Latency Trace</h4>
+          <p>Delay over time (seed 3). Shows DAPS successfully dodging S3 bursts and S4 degradation.</p>
+        </div>
+        <div class="gallery-card">
+          <img src="figures/fig_sensitivity.png" alt="Sensitivity Analysis" loading="lazy">
+          <h4>Parameter Sensitivity Sweeps</h4>
+          <p>Effect of probe interval, EWMA alpha, and hysteresis on delay and path switching frequency.</p>
+        </div>
+        <div class="gallery-card">
+          <img src="figures/fig_failure.png" alt="Critical Failure Conditions" loading="lazy">
+          <h4>Failure Boundary & Critical Analysis</h4>
+          <p>Empirical evidence of self-induced congestion above 4 Mbps and stale probing above 10 seconds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

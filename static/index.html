@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TracePulse — Live Network Path &amp; Latency Telemetry</title>
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Background Ambient Glow -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Top Glassmorphic Navigation -->
+  <nav class="glass-nav">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="m4.93 4.93 4.24 4.24"></path>
+          <path d="m14.83 9.17 4.24-4.24"></path>
+          <path d="m14.83 14.83 4.24 4.24"></path>
+          <path d="m9.17 14.83-4.24 4.24"></path>
+          <circle cx="12" cy="12" r="4"></circle>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">TRACEPULSE</span>
+        <span class="brand-sub">NETWORK PATH &amp; DELAY ANALYZER</span>
+      </div>
+    </div>
+
+    <div class="nav-links">
+      <button data-tab="trace" class="nav-btn active">
+        <span class="btn-dot"></span> Trace
+      </button>
+      <button data-tab="history" class="nav-btn">History</button>
+      <button data-tab="about" class="nav-btn">About &amp; Concepts</button>
+    </div>
+
+    <div class="nav-actions">
+      <div class="engine-badge">
+        <span class="pulse-indicator"></span>
+        <span id="engine-status">SYSTEM READY</span>
+      </div>
+      <button id="theme-toggle" class="icon-btn" title="Toggle Theme">🌙</button>
+    </div>
+  </nav>
+
+  <!-- TAB: TRACE (Primary Real-Time Dashboard) -->
+  <main id="tab-trace" class="tab active">
+
+    <!-- Hero Command Bar -->
+    <section class="command-bar glass-card">
+      <div class="input-form-grid">
+        <div class="input-group main-input">
+          <label for="target">DESTINATION TARGET</label>
+          <div class="input-with-icon">
+            <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <input type="text" id="target" placeholder="Domain or IP (e.g. google.com, 1.1.1.1, 8.8.8.8)" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="method">PROTOCOL</label>
+          <select id="method" title="Protocol Probe">
+            <option value="icmp" selected>ICMP Echo</option>
+            <option value="udp">UDP Probe</option>
+            <option value="tcp">TCP SYN</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="max-hops">MAX HOPS</label>
+          <input type="number" id="max-hops" value="30" min="1" max="64" title="Max Hop Limit">
+        </div>
+
+        <div class="input-group btn-col">
+          <label>&nbsp;</label>
+          <button id="btn-trace" class="btn-glow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Trace Route</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Stream Progress Strip -->
+      <div id="progress-bar" class="progress-strip hidden">
+        <div class="progress-glow-bar"></div>
+        <div class="progress-label-wrap">
+          <span class="live-dot"></span>
+          <span id="progress-text" class="progress-label">Initiating route discovery...</span>
+        </div>
+      </div>
+
+      <div id="error-msg" class="error-banner hidden"></div>
+    </section>
+
+    <!-- Unified Dashboard Viewport (Always visible side-by-side) -->
+    <div id="results" class="dashboard-grid">
+
+      <!-- Dynamic KPI Metric Ribbon (Top Row) -->
+      <section class="kpi-ribbon">
+        <div class="kpi-card">
+          <div class="kpi-label">TOTAL HOPS</div>
+          <div class="kpi-val" id="kpi-hops">0</div>
+          <div class="kpi-sub">Packets in transit</div>
+        </div>
+
+        <div class="kpi-card highlight-cyan">
+          <div class="kpi-label">END-TO-END LATENCY</div>
+          <div class="kpi-val" id="kpi-rtt">0.0 <small>ms</small></div>
+          <div class="kpi-sub" id="kpi-dest">Awaiting trace</div>
+        </div>
+
+        <div class="kpi-card highlight-amber">
+          <div class="kpi-label">BOTTLENECK JUMP</div>
+          <div class="kpi-val" id="kpi-bottleneck">None</div>
+          <div class="kpi-sub" id="kpi-bottleneck-delay">+0.0 ms spike</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">MEAN JITTER</div>
+          <div class="kpi-val" id="kpi-jitter">0.0 <small>ms</small></div>
+          <div class="kpi-sub">RTT stability index</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">PACKET LOSS</div>
+          <div class="kpi-val" id="kpi-loss">0.0%</div>
+          <div class="kpi-sub" id="kpi-loss-sub">Delivery reliability</div>
+        </div>
+      </section>
+
+      <!-- Diagnostic Banner -->
+      <div class="diagnostic-banner glass-card" id="diagnostic-card">
+        <div class="diag-icon">⚡</div>
+        <div class="diag-content">
+          <div class="diag-title">ROUTE DIAGNOSTIC ANALYSIS</div>
+          <div class="diag-body" id="analysis-explanation">
+            Enter a destination target above and click "Trace Route" to inspect hop delays, jitter, packet loss, and physical routing.
+          </div>
+        </div>
+      </div>
+
+      <!-- Dual Visualizer Row: Interactive Map & Latency Chart Side-by-Side -->
+      <section class="visualizer-row">
+        <!-- Interactive Geographic Map Card (50% Width) -->
+        <div class="viz-card glass-card">
+          <div class="viz-header">
+            <div class="viz-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                <path d="M2 12h20"></path>
+              </svg>
+              <span>GEOGRAPHIC ROUTE MAP</span>
+            </div>
+            <span class="viz-badge" id="map-counter">0 Locations</span>
+          </div>
+          <div id="map" class="map-viewport"></div>
+        </div>
+
+        <!-- RTT Latency Bar Chart Card (50% Width) -->
+        <div class="viz-card glass-card">
+          <div class="viz-header">
+            <div class="viz-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              <span>ROUND-TRIP TIME (RTT) PER HOP</span>
+            </div>
+            <div class="legend-pills">
+              <span class="pill-good">&lt;30ms</span>
+              <span class="pill-warn">30-100ms</span>
+              <span class="pill-bad">&gt;100ms</span>
+            </div>
+          </div>
+          <div class="chart-viewport">
+            <canvas id="rtt-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hop-by-Hop Telemetry Table (Scrollable Container - Never pushes layout) -->
+      <section class="telemetry-card glass-card">
+        <div class="telemetry-header">
+          <div class="telemetry-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+              <path d="M3 9h18"></path>
+              <path d="M9 21V9"></path>
+            </svg>
+            <span>HOP-BY-HOP ROUTING &amp; DELAY TELEMETRY</span>
+          </div>
+
+          <div class="telemetry-actions">
+            <button class="btn-export-ghost" onclick="exportCSV()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              CSV
+            </button>
+            <button class="btn-export-ghost" onclick="exportJSON()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              JSON
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll-viewport">
+          <table id="hops-table">
+            <thead>
+              <tr>
+                <th style="width: 55px;">HOP</th>
+                <th>IP ADDRESS</th>
+                <th>REVERSE DNS HOSTNAME</th>
+                <th>RTT 1</th>
+                <th>RTT 2</th>
+                <th>RTT 3</th>
+                <th>AVG RTT</th>
+                <th>INC DELAY</th>
+                <th>JITTER</th>
+                <th>LOSS %</th>
+                <th>GEOLOCATION</th>
+                <th>ASN / CARRIER</th>
+              </tr>
+            </thead>
+            <tbody id="hops-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- TAB: HISTORY (Stored Analyses in SQLite) -->
+  <main id="tab-history" class="tab hidden">
+    <div class="glass-card" style="padding: 1.75rem;">
+      <div class="telemetry-header" style="margin-bottom: 1.25rem;">
+        <div class="telemetry-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 14 14"></polyline>
+          </svg>
+          <span style="font-size: 1.2rem;">PERSISTENT ANALYSIS HISTORY (SQLite)</span>
+        </div>
+      </div>
+
+      <div class="table-scroll-viewport" style="max-height: 550px;">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th>TARGET HOST</th>
+              <th>RESOLVED IP</th>
+              <th>METHOD</th>
+              <th>TOTAL HOPS</th>
+              <th>END-TO-END LATENCY</th>
+              <th>TIMESTAMP (UTC)</th>
+              <th style="text-align: right;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+      <p id="no-history" class="muted" style="text-align: center; padding: 3rem 0;">No stored analyses yet. Run a trace to build your history log.</p>
+    </div>
+  </main>
+
+  <!-- TAB: ABOUT & HOW IT WORKS (CN Concepts) -->
+  <main id="tab-about" class="tab hidden">
+    <div class="glass-card" style="padding: 2rem;">
+      <h2 style="font-family: var(--font-heading); font-size: 1.7rem; margin-bottom: 0.5rem; letter-spacing: -0.02em;">
+        How Network Path and Delay Analyzer Works
+      </h2>
+      <p class="muted" style="margin-bottom: 2rem; font-size: 0.95rem;">
+        Core computer networking concepts, delay mechanics, and routing protocols implemented in this project.
+      </p>
+
+      <div class="concepts-grid">
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">🔢</span>
+            <h4>TTL &amp; ICMP Time Exceeded</h4>
+          </div>
+          <p>
+            Traceroute sends probe packets with an incrementing <strong>Time-To-Live (TTL)</strong> field in the IP header. Each intermediate router decrements the TTL by 1. When TTL hits 0, the router discards the packet and transmits an <strong>ICMP Type 11 (Time Exceeded)</strong> datagram back to the source, uncovering the router's IP address.
+          </p>
+        </div>
+
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">🔗</span>
+            <h4>Routing Hops &amp; Transit Paths</h4>
+          </div>
+          <p>
+            Packets traverse a series of intermediate routers ("hops") determined by BGP and interior routing tables (OSPF/IS-IS). Each hop forwards traffic toward the destination IP according to prefix matches, crossing Internet Exchange Points (IXPs) and inter-carrier transit links.
+          </p>
+        </div>
+
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">⏱️</span>
+            <h4>Round-Trip Time (RTT)</h4>
+          </div>
+          <p>
+            The round-trip duration for a probe to reach an intermediate hop and return an ICMP response. We fire 3 consecutive probes per hop to calculate the minimum, maximum, and average RTT to capture short-term latency variance.
+          </p>
+        </div>
+
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">📶</span>
+            <h4>The 4 Components of Network Delay</h4>
+          </div>
+          <p>
+            Total hop delay $D = d_{proc} + d_{queue} + d_{trans} + d_{prop}$. <strong>Propagation delay</strong> reflects distance (fiber speed of light ~200,000 km/s). <strong>Transmission delay</strong> ($L/R$) reflects link bandwidth. <strong>Queueing delay</strong> represents buffer backlog, and <strong>processing delay</strong> is router route-lookup time.
+          </p>
+        </div>
+
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">📉</span>
+            <h4>Jitter (Delay Variation)</h4>
+          </div>
+          <p>
+            Jitter measures the statistical dispersion of consecutive packet latencies ($\Delta \text{RTT}$). Excessive jitter indicates fluctuating router queue depths, transient congestion, or route fluttering, which severely impairs real-time UDP streams like VoIP and video conferencing.
+          </p>
+        </div>
+
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">❌</span>
+            <h4>Packet Loss &amp; ICMP Deprioritization</h4>
+          </div>
+          <p>
+            Reported when probes time out (<code>* * *</code>). Intermediate hops often rate-limit ICMP responses or block them via firewall ACLs without impacting data forwarding. A persistent loss jump extending all the way to destination signals true congestion or link impairment.
+          </p>
+        </div>
+
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">🌍</span>
+            <h4>DNS Forward &amp; Reverse Resolution</h4>
+          </div>
+          <p>
+            Domain targets are resolved into IP addresses via recursive hierarchical DNS lookups. For discovered hops, asynchronous reverse-DNS queries (<code>PTR</code> records) resolve router interface hostnames to help uncover carrier node locations.
+          </p>
+        </div>
+
+        <div class="concept-tile">
+          <div class="concept-header">
+            <span class="concept-icon">🏢</span>
+            <h4>Autonomous Systems (ASN)</h4>
+          </div>
+          <p>
+            Each hop IP is correlated to its <strong>Autonomous System Number (ASN)</strong>, identifying the commercial organization or ISP governing that network segment (e.g. Google AS15169, Cloudflare AS13335, Airtel AS9498).
+          </p>
+        </div>
+      </div>
+
+      <div class="disclaimer-box" style="margin-top: 2rem;">
+        <h4>⚠️ Responsible Diagnostic Notice</h4>
+        <p>This laboratory tool is engineered strictly for authorized academic analysis, diagnostic troubleshooting, and computer networks educational coursework. Probing external networks must always respect acceptable use policies.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
