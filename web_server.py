@@ -274,7 +274,12 @@ class DualStackServer(http.server.ThreadingHTTPServer):
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
+    port = PORT
+    if len(sys.argv) > 1:
+        if sys.argv[1].isdigit():
+            port = int(sys.argv[1])
+        elif sys.argv[1] in ('--port', '-p') and len(sys.argv) > 2 and sys.argv[2].isdigit():
+            port = int(sys.argv[2])
     os.makedirs(WEB_DIR, exist_ok=True)
     try:
         server = DualStackServer(("::", port), PDARequestHandler)

@@ -63,7 +63,7 @@ echo   Press Ctrl+C to stop the server.
 echo ========================================================
 echo.
 
-"%PYTHON_CMD%" -m app.main
+"%PYTHON_CMD%" web_server.py 8000
 if %errorlevel% neq 0 (
     echo.
     echo Server exited with error code %errorlevel%.
